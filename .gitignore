@@ -1,0 +1,77 @@
+# ========================
+# BACKEND
+# ========================
+
+# Environment
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual Environment
+backend/venv/
+backend/.venv/
+venv/
+.venv/
+env/
+
+# ML Models (large binary files)
+backend/ml/*.pkl
+
+# Firebase Service Account (sensitive credentials)
+backend/*-firebase-adminsdk-*.json
+backend/*-adminsdk-*.json
+!backend/firebase-adminsdk.example.json
+
+# Database
+backend/services/notifications.db
+*.db
+
+# Logs
+*.log
+
+# ========================
+# FRONTEND
+# ========================
+
+# Environment
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Dependencies
+frontend/node_modules/
+
+# Build output
+frontend/dist/
+frontend/dist-ssr/
+
+# ========================
+# GENERAL
+# ========================
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.sw?
+*.local
+
+# No Need folder (archive)
+No Need/
+
+# Temp/test scripts
+check_syntax.py
+fix_prints.py
+show_lines.py

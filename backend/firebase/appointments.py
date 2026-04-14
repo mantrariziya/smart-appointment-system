@@ -1,0 +1,444 @@
+"""
+Firebase Appointments Management
+Handles appointment CRUD operations with Firestore
+"""
+import os
+import json
+from datetime import datetime
+from google.cloud import firestore
+from firebase.client import get_firestore_client
+from logger import setup_logger
+
+logger = setup_logger(__name__)
+
+db = get_firestore_client()
+
+
+def check_daily_appointment_limit(user_id, date):
+    """
+    Check if user has reached daily appointment limit (2 per day)
+    
+    Args:
+        user_id (str): User's Firebase UID
+        date (str): Date in YYYY-MM-DD format
+    
+    Returns:
+        dict: {can_book: bool, count: int, message: str}
+    """
+    if not db:
+        return {'can_book': True, 'count': 0, 'message': 'Database not available'}
+    
+    try:
+        # Query appointments for this user on this date
+        appointments_ref = db.collection('appointments')
+        query = appointments_ref.where('userId', '==', user_id).where('date', '==', date)
+        appointments = query.stream()
+        
+        count = sum(1 for _ in appointments)
+        
+        if count >= 2:
+            return {
+                'can_book': False,
+                'count': count,
+                'message': 'Daily limit reached. You can only book 2 appointments per day.'
+            }
+        
+        return {
+            'can_book': True,
+            'count': count,
+            'message': f'You can book {2 - count} more appointment(s) today.'
+        }
+        
+    except Exception as e:
+        return {'can_book': True, 'count': 0, 'message': 'Error checking limit'}
+
+
+def create_appointment(appointment_data):
+    """
+    Create new appointment in Firestore
+    
+    Args:
+        appointment_data (dict): Appointment details
+            - userId (required)
+            - doctorId (required)
+            - date (required)
+            - timeSlot (required)
+            - isEmergency (required)
+            - patientName
+            - patientAge
+            - symptoms
+            - status (default: pending)
+    
+    Returns:
+        dict: {success: bool, appointmentId: str, message: str}
+    """
+    if not db:
+        return {'success': False, 'message': 'Database not available'}
+    
+    try:
+        # Validate required fields
+        required_fields = ['userId', 'doctorId', 'date', 'timeSlot']
+        for field in required_fields:
+            if field not in appointment_data:
+                return {'success': False, 'message': f'Missing required field: {field}'}
+        
+        # Check daily limit
+        limit_check = check_daily_appointment_limit(
+            appointment_data['userId'],
+            appointment_data['date']
+        )
+        
+        if not limit_check['can_book']:
+            return {
+                'success': False,
+                'message': limit_check['message'],
+                'limit_reached': True
+            }
+        
+        # Prepare appointment document
+        appointment = {
+            'userId': appointment_data['userId'],
+            'doctorId': appointment_data['doctorId'],
+            'date': appointment_data['date'],
+            'timeSlot': appointment_data['timeSlot'],
+            'isEmergency': appointment_data.get('isEmergency', False),
+            'patientName': appointment_data.get('patientName', ''),
+            'patientAge': appointment_data.get('patientAge', 0),
+            'patientGender': appointment_data.get('patientGender', ''),
+            'patientPhone': appointment_data.get('patientPhone', ''),
+            'patientEmail': appointment_data.get('patientEmail', ''),
+            'symptoms': appointment_data.get('symptoms', ''),
+            'triage': appointment_data.get('triage', {}),
+            'predictedTime': appointment_data.get('predictedTime', 20),
+            'status': appointment_data.get('status', 'pending'),
+            'createdAt': firestore.SERVER_TIMESTAMP,
+            'updatedAt': firestore.SERVER_TIMESTAMP
+        }
+        
+        # Add to Firestore
+        doc_ref = db.collection('appointments').add(appointment)
+        appointment_id = doc_ref[1].id
+        
+        # Prepare response (replace SERVER_TIMESTAMP with actual datetime for JSON serialization)
+        response_appointment = appointment.copy()
+        response_appointment['createdAt'] = datetime.now().isoformat()
+        response_appointment['updatedAt'] = datetime.now().isoformat()
+        
+        
+        return {
+            'success': True,
+            'appointmentId': appointment_id,
+            'message': 'Appointment created successfully',
+            'appointment': response_appointment
+        }
+        
+    except Exception as e:
+        return {'success': False, 'message': str(e)}
+
+
+def get_doctor_appointments(doctor_id, include_emergency=True):
+    """
+    Get appointments for a specific doctor
+    
+    Args:
+        doctor_id (str): Doctor's ID
+        include_emergency (bool): Include emergency appointments from other doctors
+    
+    Returns:
+        list: List of appointments
+    """
+    if not db:
+        return []
+    
+    try:
+        appointments = []
+        
+        # Get doctor's own appointments (without ordering to avoid index requirement)
+        appointments_ref = db.collection('appointments')
+        query = appointments_ref.where('doctorId', '==', doctor_id)
+        
+        for doc in query.stream():
+            appt = doc.to_dict()
+            appt['id'] = doc.id
+            # Mark as doctor's own appointment
+            appt['isOtherDoctorEmergency'] = False
+            appointments.append(appt)
+        
+        # Get emergency appointments from ALL doctors (for visibility only)
+        if include_emergency:
+            emergency_query = appointments_ref.where('isEmergency', '==', True)
+            
+            for doc in emergency_query.stream():
+                appt = doc.to_dict()
+                appt['id'] = doc.id
+                
+                # Avoid duplicates (if doctor's own emergency appointment)
+                if appt['doctorId'] != doctor_id:
+                    # Mark as other doctor's emergency (view-only)
+                    appt['isOtherDoctorEmergency'] = True
+                    appointments.append(appt)
+                # If it's the doctor's own emergency, it's already added above with isOtherDoctorEmergency=False
+        
+        # Sort in Python instead of Firestore (to avoid index requirement)
+        appointments.sort(key=lambda x: x.get('createdAt', datetime.now()), reverse=True)
+        
+        return appointments
+        
+    except Exception as e:
+        return []
+
+
+def get_user_appointments(user_id):
+    """
+    Get appointments for a specific user
+    
+    Args:
+        user_id (str): User's Firebase UID
+    
+    Returns:
+        list: List of appointments
+    """
+    if not db:
+        return []
+    
+    try:
+        appointments = []
+        appointments_ref = db.collection('appointments')
+        query = appointments_ref.where('userId', '==', user_id)
+        
+        for doc in query.stream():
+            appt = doc.to_dict()
+            appt['id'] = doc.id
+            appointments.append(appt)
+        
+        # Sort in Python instead of Firestore
+        appointments.sort(key=lambda x: x.get('createdAt', datetime.now()), reverse=True)
+        
+        return appointments
+        
+    except Exception as e:
+        return []
+
+
+def update_appointment_status(appointment_id, status):
+    """
+    Update appointment status
+    
+    Args:
+        appointment_id (str): Appointment document ID
+        status (str): New status (pending/confirmed/completed)
+    
+    Returns:
+        dict: {success: bool, message: str}
+    """
+    if not db:
+        return {'success': False, 'message': 'Database not available'}
+    
+    try:
+        valid_statuses = ['pending', 'confirmed', 'completed', 'cancelled']
+        if status not in valid_statuses:
+            return {'success': False, 'message': f'Invalid status. Must be one of: {valid_statuses}'}
+        
+        doc_ref = db.collection('appointments').document(appointment_id)
+        doc_ref.update({
+            'status': status,
+            'updatedAt': firestore.SERVER_TIMESTAMP
+        })
+        
+        
+        return {
+            'success': True,
+            'message': f'Appointment status updated to {status}'
+        }
+        
+    except Exception as e:
+        return {'success': False, 'message': str(e)}
+
+
+def get_all_doctors():
+    """
+    Get all users with role='doctor' from Firestore
+    
+    Returns:
+        list: List of doctor profiles
+    """
+    if not db:
+        return []
+    
+    try:
+        doctors = []
+        users_ref = db.collection('users')
+        query = users_ref.where('role', '==', 'doctor')
+        
+        for doc in query.stream():
+            doctor = doc.to_dict()
+            doctor['id'] = doc.id
+            doctors.append(doctor)
+        
+        return doctors
+        
+    except Exception as e:
+        return []
+
+
+def delete_appointment(appointment_id):
+    """
+    Delete an appointment
+    
+    Args:
+        appointment_id (str): Appointment document ID
+    
+    Returns:
+        dict: {success: bool, message: str}
+    """
+    if not db:
+        return {'success': False, 'message': 'Database not available'}
+    
+    try:
+        db.collection('appointments').document(appointment_id).delete()
+        
+        return {
+            'success': True,
+            'message': 'Appointment deleted successfully'
+        }
+        
+    except Exception as e:
+        return {'success': False, 'message': str(e)}
+
+
+def get_appointments_by_patient(patient_id):
+    """
+    Get all appointments for a specific patient
+    
+    Args:
+        patient_id (str): Patient's Firebase UID
+    
+    Returns:
+        dict: {success: bool, appointments: list, error: str}
+    """
+    if not db:
+        return {'success': False, 'error': 'Database not available'}
+    
+    try:
+        appointments_ref = db.collection('appointments')
+        query = appointments_ref.where('userId', '==', patient_id)
+        
+        docs = query.stream()
+        
+        appointments = []
+        for doc in docs:
+            apt_data = doc.to_dict()
+            apt_data['id'] = doc.id
+            appointments.append(apt_data)
+        
+        
+        return {
+            'success': True,
+            'appointments': appointments,
+            'total': len(appointments)
+        }
+        
+    except Exception as e:
+        logger.exception(f"Error in get_appointments_by_patient: {e}")
+        return {'success': False, 'error': str(e)}
+
+
+def get_all_appointments():
+    """
+    Get all appointments (for admin)
+    
+    Returns:
+        dict: {success: bool, appointments: list, error: str}
+    """
+    if not db:
+        return {'success': False, 'error': 'Database not available'}
+    
+    try:
+        appointments_ref = db.collection('appointments')
+        docs = appointments_ref.stream()
+        
+        appointments = []
+        for doc in docs:
+            apt_data = doc.to_dict()
+            apt_data['id'] = doc.id
+            appointments.append(apt_data)
+        
+        
+        return {
+            'success': True,
+            'appointments': appointments,
+            'total': len(appointments)
+        }
+        
+    except Exception as e:
+        logger.exception(f"Error in get_all_appointments: {e}")
+        return {'success': False, 'error': str(e)}
+
+
+def get_appointment_by_id(appointment_id):
+    """
+    Get a specific appointment by ID
+    
+    Args:
+        appointment_id (str): Appointment document ID
+    
+    Returns:
+        dict: {success: bool, appointment: dict, error: str}
+    """
+    if not db:
+        return {'success': False, 'error': 'Database not available'}
+    
+    try:
+        doc_ref = db.collection('appointments').document(appointment_id)
+        doc = doc_ref.get()
+        
+        if doc.exists:
+            apt_data = doc.to_dict()
+            apt_data['id'] = doc.id
+            
+            return {
+                'success': True,
+                'appointment': apt_data
+            }
+        else:
+            return {
+                'success': False,
+                'error': 'Appointment not found'
+            }
+        
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+
+
+def update_appointment(appointment_id, update_data):
+    """
+    Update appointment with any data
+    
+    Args:
+        appointment_id (str): Appointment document ID
+        update_data (dict): Data to update
+    
+    Returns:
+        dict: {success: bool, message: str}
+    """
+    if not db:
+        return {'success': False, 'message': 'Database not available'}
+    
+    try:
+        doc_ref = db.collection('appointments').document(appointment_id)
+        
+        # Add timestamp
+        update_data['updatedAt'] = datetime.now().isoformat()
+        
+        doc_ref.update(update_data)
+        
+        
+        return {
+            'success': True,
+            'message': 'Appointment updated successfully'
+        }
+        
+    except Exception as e:
+        logger.exception(f"Error in update_appointment: {e}")
+        return {'success': False, 'message': str(e)}
