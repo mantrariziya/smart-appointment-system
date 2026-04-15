@@ -1,6 +1,4 @@
-# 🏥 Smart Appointment System
-
-<div align="center">
+# Smart Appointment System
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
@@ -10,13 +8,11 @@
 ![Groq](https://img.shields.io/badge/Groq-LLaMA_3.1-purple?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-**A production-grade, AI-powered healthcare appointment system — built to solve real hospital problems: long queues, missed appointments, and zero automation.**
-
-</div>
+A production-grade, AI-powered healthcare appointment system — built to solve real hospital problems: long queues, missed appointments, and zero automation.
 
 ---
 
-## 💡 Why This Project?
+## Why This Project?
 
 Most hospital appointment systems are just glorified Google Forms — no intelligence, no automation, no real-time feedback.
 
@@ -28,24 +24,24 @@ This was built to fix all three. With AI triage, ML-based time prediction, a dyn
 
 ---
 
-## ✨ Features
+## Features
 
-| | Feature | What It Actually Does |
-|-|---------|----------------------|
-| 🤖 | **AI Symptom Triage** | Groq LLaMA 3.1 reads patient symptoms, assigns a severity score — critical cases jump the queue automatically |
-| 🧠 | **Consultation Time Prediction** | RandomForest model predicts how long each appointment will take |
-| 📊 | **No-Show Prediction** | GradientBoosting model trained on 110K+ hospital records flags patients likely to miss their slot |
-| 🚨 | **Dynamic Priority Queue** | Queue reorders in real-time based on severity, wait time, and emergency escalations |
-| 🔄 | **Firebase Queue Sync** | On startup, all pending/confirmed appointments sync from Firestore into the live queue engine |
-| 📱 | **WhatsApp + SMS Reminders** | Twilio sends automated confirmations and emergency alerts to patients and doctors |
-| 🔐 | **OTP Password Reset** | Time-limited email OTP flow via Gmail SMTP |
-| 📅 | **Doctor Availability Management** | Doctors set their own schedules; system blocks unavailable slots intelligently |
-| 📄 | **Auto-generated PDF Reports** | Medical consultation summaries generated with ReportLab, downloadable instantly |
-| 💳 | **Payment Integration** | Razorpay handles consultation fees with full order tracking |
+| Feature | What It Actually Does |
+|---------|----------------------|
+| AI Symptom Triage | Groq LLaMA 3.1 reads patient symptoms, assigns a severity score — critical cases jump the queue automatically |
+| Consultation Time Prediction | RandomForest model predicts how long each appointment will take |
+| No-Show Prediction | GradientBoosting model trained on 110K+ hospital records flags patients likely to miss their slot |
+| Dynamic Priority Queue | Queue reorders in real-time based on severity, wait time, and emergency escalations |
+| Firebase Queue Sync | On startup, all pending/confirmed appointments sync from Firestore into the live queue engine |
+| WhatsApp + SMS Reminders | Twilio sends automated confirmations and emergency alerts to patients and doctors |
+| OTP Password Reset | Time-limited email OTP flow via Gmail SMTP |
+| Doctor Availability Management | Doctors set their own schedules; system blocks unavailable slots intelligently |
+| Auto-generated PDF Reports | Medical consultation summaries generated with ReportLab, downloadable instantly |
+| Payment Integration | Razorpay handles consultation fees with full order tracking |
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -61,17 +57,17 @@ This was built to fix all three. With AI triage, ML-based time prediction, a dyn
 
 ---
 
-## 👥 User Roles
+## User Roles
 
 | Role | Capabilities |
 |------|-------------|
-| 🧑⚕️ **Patient** | Book appointments, track live queue position, download PDF reports |
-| 👨⚕️ **Doctor** | View today's queue, see predicted consultation times, manage schedule |
-| 🛡️ **Admin** | Full analytics dashboard, manage doctors, track payments, monitor no-shows |
+| Patient | Book appointments, track live queue position, download PDF reports |
+| Doctor | View today's queue, see predicted consultation times, manage schedule |
+| Admin | Full analytics dashboard, manage doctors, track payments, monitor no-shows |
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 smart-appointment-system/
@@ -124,26 +120,26 @@ smart-appointment-system/
 
 ---
 
-## 🧠 ML Models
+## ML Models
 
-**Consultation Time Predictor** — `ml/model.py`
+Consultation Time Predictor — `ml/model.py`
 - Input: patient age, symptom severity score, doctor experience, visit type
 - Model: RandomForest Regressor (pre-trained, loaded from `.pkl`)
 - Output: predicted duration in minutes — shown as estimated wait time in queue
 
-**No-Show Predictor** — `ml/noshow.py`
+No-Show Predictor — `ml/noshow.py`
 - Input: booking lead time, patient history, day of week, reminder status
 - Model: GradientBoosting Classifier — trained on 110K+ real hospital records
 - Output: probability score (0–1) — high-risk slots flagged for admin follow-up
 
-**Dynamic Queue Engine** — `ml/scheduler.py`
+Dynamic Queue Engine — `ml/scheduler.py`
 - Sorts queue by: emergency flag → severity score → arrival time
 - Handles real-time status updates: `Waiting → Checked-in → In-Progress → Completed`
 - Emergency escalation instantly bumps patient to top of queue
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -181,7 +177,7 @@ npm run dev
 
 ---
 
-## ⚙️ Environment Variables
+## Environment Variables
 
 ### `backend/.env`
 
@@ -222,7 +218,7 @@ VITE_FIREBASE_MEASUREMENT_ID=
 
 ---
 
-## 🔒 Security
+## Security
 
 - Firebase Admin SDK JSON never committed — path set via `.env` only
 - CORS restricted to `ALLOWED_ORIGINS` env variable (not `*`)
@@ -231,7 +227,7 @@ VITE_FIREBASE_MEASUREMENT_ID=
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [ ] Mobile app (React Native)
 - [ ] Video consultation integration
@@ -240,20 +236,16 @@ VITE_FIREBASE_MEASUREMENT_ID=
 
 ---
 
-## 👨💻 Author
+## Author
 
-**Mantra Riziya** — Full-Stack Developer & AI/ML Enthusiast
+**Mantra Riziya**
 
-Built this from scratch to solve a real problem in healthcare — not as a tutorial follow-along, but as a ground-up system designed for production use.
-
-- 🐙 GitHub: [@mantrariziya](https://github.com/mantrariziya)
-- 💼 LinkedIn: [mantra-riziya](https://linkedin.com/in/mantra-riziya-7aa1752b6)
-- 📧 Email: riziyamantra@gmail.com
-
-> If this project helped you or impressed you, drop a ⭐ — it genuinely matters.
+[![GitHub](https://img.shields.io/badge/GitHub-mantrariziya-181717?style=flat&logo=github)](https://github.com/mantrariziya)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-mantra--riziya-0A66C2?style=flat&logo=linkedin)](https://linkedin.com/in/mantra-riziya-7aa1752b6)
+[![Email](https://img.shields.io/badge/Email-riziyamantra@gmail.com-D14836?style=flat&logo=gmail)](mailto:riziyamantra@gmail.com)
 
 ---
 
-## 📄 License
+## License
 
-MIT License © 2025 — free to use, modify, and distribute with attribution.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
