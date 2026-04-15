@@ -6,28 +6,42 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
 ![Flask](https://img.shields.io/badge/Flask-3.0-black?style=for-the-badge&logo=flask)
 ![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange?style=for-the-badge&logo=firebase)
-![TailwindCSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css)
+![TailwindCSS](https://img.shields.io/badge/Tailwind-3-38B2AC?style=for-the-badge&logo=tailwind-css)
+![Groq](https://img.shields.io/badge/Groq-LLaMA_3.1-purple?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-**An AI-powered healthcare appointment scheduling system with real-time queue management, ML-based consultation time prediction, and automated notifications.**
+**A production-grade, AI-powered healthcare appointment system — built to solve real hospital problems: long queues, missed appointments, and zero automation.**
 
 </div>
 
 ---
 
+## 💡 Why This Project?
+
+Most hospital appointment systems are just glorified Google Forms — no intelligence, no automation, no real-time feedback.
+
+> Patients waste hours in queues without knowing their wait time.
+> Doctors have no visibility into who's coming next or how long each case will take.
+> Hospitals lose revenue from no-shows they never predicted.
+
+This was built to fix all three. With AI triage, ML-based time prediction, a dynamic priority queue, and automated WhatsApp/SMS reminders — it's not a CRUD app. It's a system that actually thinks.
+
+---
+
 ## ✨ Features
 
-| Feature | Description |
-|---------|-------------|
-| 🤖 **AI Triage** | Groq LLaMA 3.1 analyzes symptoms & assigns severity scores |
-| 🧠 **ML Prediction** | RandomForest predicts consultation duration |
-| 🚨 **Dynamic Queue** | Priority-based queue with emergency escalation |
-| 📊 **No-Show Prediction** | Trained on 110K+ real hospital records |
-| 📱 **WhatsApp & SMS** | Twilio-powered appointment reminders |
-| 🔐 **OTP Password Reset** | Secure email-based reset flow |
-| 📅 **Doctor Scheduling** | Manage availability and time slots |
-| 📄 **PDF Reports** | Auto-generated medical reports |
-| 💳 **Payments** | Razorpay gateway integration |
-| 🔥 **Firebase Backend** | Firestore real-time database |
+| | Feature | What It Actually Does |
+|-|---------|----------------------|
+| 🤖 | **AI Symptom Triage** | Groq LLaMA 3.1 reads patient symptoms, assigns a severity score — critical cases jump the queue automatically |
+| 🧠 | **Consultation Time Prediction** | RandomForest model predicts how long each appointment will take |
+| 📊 | **No-Show Prediction** | GradientBoosting model trained on 110K+ hospital records flags patients likely to miss their slot |
+| 🚨 | **Dynamic Priority Queue** | Queue reorders in real-time based on severity, wait time, and emergency escalations |
+| 🔄 | **Firebase Queue Sync** | On startup, all pending/confirmed appointments sync from Firestore into the live queue engine |
+| 📱 | **WhatsApp + SMS Reminders** | Twilio sends automated confirmations and emergency alerts to patients and doctors |
+| 🔐 | **OTP Password Reset** | Time-limited email OTP flow via Gmail SMTP |
+| 📅 | **Doctor Availability Management** | Doctors set their own schedules; system blocks unavailable slots intelligently |
+| 📄 | **Auto-generated PDF Reports** | Medical consultation summaries generated with ReportLab, downloadable instantly |
+| 💳 | **Payment Integration** | Razorpay handles consultation fees with full order tracking |
 
 ---
 
@@ -36,13 +50,24 @@
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 19, Vite, Tailwind CSS |
-| Backend | Flask, Python 3.10+ |
+| Backend | Flask 3, Python 3.10+ |
 | Database | Firebase Firestore |
-| ML | scikit-learn, RandomForest, GradientBoosting |
-| AI | Groq (LLaMA 3.1) |
 | Auth | Firebase Authentication |
-| Notifications | Twilio (WhatsApp + SMS) |
+| AI | Groq API (LLaMA 3.1) + Google Gemini |
+| ML | scikit-learn — RandomForest, GradientBoosting |
+| Notifications | Twilio (WhatsApp + SMS), Gmail SMTP |
 | Payments | Razorpay |
+| PDF | ReportLab |
+
+---
+
+## 👥 User Roles
+
+| Role | Capabilities |
+|------|-------------|
+| 🧑⚕️ **Patient** | Book appointments, track live queue position, download PDF reports |
+| 👨⚕️ **Doctor** | View today's queue, see predicted consultation times, manage schedule |
+| 🛡️ **Admin** | Full analytics dashboard, manage doctors, track payments, monitor no-shows |
 
 ---
 
@@ -51,45 +76,106 @@
 ```
 smart-appointment-system/
 ├── backend/
-│   ├── ml/              # ML models (prediction + no-show)
-│   ├── routes/          # Flask API blueprints
-│   ├── services/        # WhatsApp, SMS, email, PDF
-│   ├── firebase/        # Firestore helpers
-│   └── app.py           # Main Flask app
+│   ├── ml/
+│   │   ├── model.py                    # RandomForest consultation time predictor
+│   │   ├── noshow.py                   # GradientBoosting no-show predictor
+│   │   ├── scheduler.py                # Dynamic queue engine (priority + emergency)
+│   │   └── consultation_time_model.pkl # Trained model file
+│   ├── routes/
+│   │   ├── appointments.py             # Book, fetch, update appointments
+│   │   ├── doctor_schedule.py          # Doctor availability management
+│   │   ├── payments.py                 # Razorpay order creation + verification
+│   │   ├── reports.py                  # PDF report generation
+│   │   ├── analytics.py                # Admin analytics endpoints
+│   │   ├── notifications.py            # Notification triggers
+│   │   ├── otp.py                      # OTP send + verify
+│   │   └── history.py                  # Appointment history
+│   ├── services/
+│   │   ├── whatsapp.py                 # Patient WhatsApp via Twilio
+│   │   ├── doctor_whatsapp.py          # Doctor emergency WhatsApp alerts
+│   │   ├── sms.py                      # SMS notifications
+│   │   ├── email.py                    # Gmail SMTP OTP emails
+│   │   ├── pdf_report.py               # ReportLab PDF generation
+│   │   ├── scheduler.py                # Background notification scheduler
+│   │   └── notification.py             # Push notification handler
+│   ├── firebase/
+│   │   ├── appointments.py             # Firestore appointment CRUD
+│   │   ├── schedules.py                # Firestore schedule CRUD
+│   │   ├── client.py                   # Firebase Admin SDK init
+│   │   └── storage.py                  # Firebase Storage helpers
+│   ├── app.py                          # Flask entry point + all route registration
+│   └── logger.py                       # Centralized logging setup
 └── frontend/
     └── src/
-        ├── components/  # Reusable UI components
-        ├── pages/       # Login, Dashboard, etc.
-        └── services/    # API calls
+        ├── components/
+        │   ├── admin/                  # Admin-specific UI components
+        │   ├── doctor/                 # Doctor dashboard components
+        │   ├── patient/                # Patient booking + queue components
+        │   └── common/                 # Shared UI (modals, cards, etc.)
+        ├── pages/
+        │   ├── Login.jsx
+        │   ├── Signup.jsx
+        │   ├── UserDashboard.jsx
+        │   ├── DoctorDashboard.jsx
+        │   └── AdminDashboard.jsx
+        ├── firebase/config.js          # Firebase client init
+        └── services/api.js             # Axios API wrappers
 ```
+
+---
+
+## 🧠 ML Models
+
+**Consultation Time Predictor** — `ml/model.py`
+- Input: patient age, symptom severity score, doctor experience, visit type
+- Model: RandomForest Regressor (pre-trained, loaded from `.pkl`)
+- Output: predicted duration in minutes — shown as estimated wait time in queue
+
+**No-Show Predictor** — `ml/noshow.py`
+- Input: booking lead time, patient history, day of week, reminder status
+- Model: GradientBoosting Classifier — trained on 110K+ real hospital records
+- Output: probability score (0–1) — high-risk slots flagged for admin follow-up
+
+**Dynamic Queue Engine** — `ml/scheduler.py`
+- Sorts queue by: emergency flag → severity score → arrival time
+- Handles real-time status updates: `Waiting → Checked-in → In-Progress → Completed`
+- Emergency escalation instantly bumps patient to top of queue
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Python 3.10+
 - Node.js 18+
-- Firebase project
-- Groq API key
+- Firebase project (Firestore + Authentication enabled)
+- Groq API key — [get one free](https://console.groq.com)
 
-### Backend Setup
+### 1. Clone
+
+```bash
+git clone https://github.com/mantrariziya/smart-appointment-system.git
+cd smart-appointment-system
+```
+
+### 2. Backend
 
 ```bash
 cd backend
 pip install -r requirements.txt
 cp .env.example .env
-# Fill in your credentials in .env
+# Fill in your credentials (see below)
 python app.py
 ```
 
-### Frontend Setup
+### 3. Frontend
 
 ```bash
 cd frontend
 npm install
 cp .env.example .env
-# Fill in your Firebase config in .env
+# Add your Firebase config and backend URL
 npm run dev
 ```
 
@@ -97,35 +183,77 @@ npm run dev
 
 ## ⚙️ Environment Variables
 
-### Backend (`backend/.env`)
-| Variable | Description |
-|----------|-------------|
-| `GROQ_API_KEY` | Groq API key for AI triage |
-| `FIREBASE_SERVICE_ACCOUNT_PATH` | Firebase admin SDK JSON path |
-| `TWILIO_ACCOUNT_SID` | Twilio account SID |
-| `TWILIO_AUTH_TOKEN` | Twilio auth token |
-| `SMTP_EMAIL` | Gmail address for OTP emails |
-| `SMTP_PASSWORD` | Gmail app-specific password |
-| `RAZORPAY_KEY_ID` | Razorpay key ID |
+### `backend/.env`
 
-### Frontend (`frontend/.env`)
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_URL` | Backend URL (default: http://localhost:5000) |
-| `VITE_FIREBASE_API_KEY` | Firebase web API key |
-| `VITE_FIREBASE_PROJECT_ID` | Firebase project ID |
+```env
+FIREBASE_SERVICE_ACCOUNT_PATH=your-firebase-adminsdk.json
+FLASK_DEBUG=false
+PORT=5000
+FLASK_HOST=127.0.0.1
+ALLOWED_ORIGINS=http://localhost:5173
+
+GROQ_API_KEY=
+GEMINI_API_KEY=
+
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+
+SMTP_EMAIL=
+SMTP_PASSWORD=
+HOSPITAL_NAME=Smart Medical Center
+
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+```
+
+### `frontend/.env`
+
+```env
+VITE_API_URL=http://localhost:5000
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
+```
 
 ---
 
-## 👥 User Roles
+## 🔒 Security
 
-- **Patient** — Book appointments, view queue, download reports
-- **Doctor** — Manage schedule, view patients, generate PDF reports
-- **Admin** — Full dashboard, analytics, payment management
+- Firebase Admin SDK JSON never committed — path set via `.env` only
+- CORS restricted to `ALLOWED_ORIGINS` env variable (not `*`)
+- OTP tokens are time-limited and single-use
+- All third-party keys isolated in `.env` — never hardcoded
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Mobile app (React Native)
+- [ ] Video consultation integration
+- [ ] Multi-hospital / multi-branch support
+- [ ] ABDM (Ayushman Bharat Digital Mission) compliance
+
+---
+
+## 👨💻 Author
+
+**Mantra Riziya** — Full-Stack Developer & AI/ML Enthusiast
+
+Built this from scratch to solve a real problem in healthcare — not as a tutorial follow-along, but as a ground-up system designed for production use.
+
+- 🐙 GitHub: [@mantrariziya](https://github.com/mantrariziya)
+- 💼 LinkedIn: [mantra-riziya](https://linkedin.com/in/mantra-riziya-7aa1752b6)
+- 📧 Email: riziyamantra@gmail.com
+
+> If this project helped you or impressed you, drop a ⭐ — it genuinely matters.
 
 ---
 
 ## 📄 License
 
-MIT License © 2025
-# smart-appointment-system
+MIT License © 2025 — free to use, modify, and distribute with attribution.
